@@ -37,3 +37,6 @@ func (p *Player) ToString() string {
 	s := fmt.Sprint("X: ", p.X, "Y: ", p.Y)
 	return s
 }
+func (p *Player) DrawPlayer(framecount, state int) {
+	rl.DrawTexture(p.Sprite, p.X, p.Y, rl.White)
+}

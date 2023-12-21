@@ -1,33 +1,57 @@
 package main
 
 import (
+	ent "GoGoGo/Entities"
+	ui "GoGoGo/UI"
 	"fmt"
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
-import ent "GoGoGo/Entities"
 
 const (
-	screenWidth  = 512
-	screenHeight = 374
+	screenWidth  = 800
+	screenHeight = 600
+	tileSize     = 16
+	mapWidth     = 100
+	mapHeight    = 80
+	zoom         = 3
 )
 
 var (
-	running   = true
-	Character *ent.Player
+	running = true
+
+	tileMap     [][]int
+	grassSprite rl.Texture2D
+
+	Character   *ent.Player
+	PauseButton *ui.Button
 
 	playerUp, playerDown, playerRight, playerLeft bool
 	playerMoving                                  bool
 
+	state      int
+	framecount int
+
 	cam rl.Camera2D
 )
 
-func initialize() {
+func init() {
+	state = 0
 	rl.SetExitKey(0)
 	rl.SetTargetFPS(60)
 	rl.InitWindow(screenWidth, screenHeight, "CozyTown")
-	Character = ent.NewPlayer(100, 100, 100, 1, "Assets/PlayerFemale.png")
-	cam = rl.NewCamera2D(rl.NewVector2(screenWidth/2, screenHeight/2), rl.NewVector2(float32(Character.X)+Character.Width/2, float32(Character.Y)+Character.Height/2), 0, 3)
-	fmt.Print(Character.Width, " H:", Character.Height)
+	grassSprite = rl.LoadTexture("Assets/Tiles/grass_1.png")
+	tileMap = make([][]int, mapHeight)
+	for i := range tileMap {
+		tileMap[i] = make([]int, mapWidth)
+		for j := range tileMap[i] {
+			tileMap[i][j] = 0
+		}
+	}
+
+	Character = ent.NewPlayer(200, 100, 100, 1, "Assets/PlayerFemale.png")
+	PauseButton = ui.NewButton(0, 0, 0, "Assets/Buttons/pausebutton.png")
+	cam = rl.NewCamera2D(rl.NewVector2(screenWidth/2, screenHeight/2), rl.NewVector2(float32(Character.X)+Character.Width/2, float32(Character.Y)+Character.Height/2), 0, zoom)
+
 }
 
 func input() {
@@ -50,6 +74,7 @@ func input() {
 	if rl.IsKeyPressed(rl.KeyF) {
 		rl.ToggleFullscreen()
 	}
+
 }
 
 func update() {
@@ -68,16 +93,20 @@ func update() {
 			Character.Move(Character.Speed, 0)
 		}
 	}
+	framecount++
 
 	playerMoving = false
 	playerUp, playerDown, playerRight, playerLeft = false, false, false, false
 
 	cam.Target = rl.NewVector2(float32(Character.X)+Character.Width/2, float32(Character.Y)+Character.Height/2)
+	fmt.Println("X:", cam.Target.X-screenWidth/2, " Y:", cam.Target.Y-screenHeight/2)
+	PauseButton.SetPos(cam.Target.X-(screenWidth/(2*zoom)-1), cam.Target.Y-(screenHeight/(2*zoom))+1)
 }
 
 func render() {
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.White)
+
 	rl.BeginMode2D(cam)
 	drawScene()
 	rl.EndMode2D()
@@ -90,13 +119,16 @@ func quit() {
 }
 
 func drawScene() {
-
-	rl.DrawTexture(Character.Sprite, Character.X, Character.Y, rl.White)
+	for i := range tileMap {
+		for j := range tileMap[i] {
+			rl.DrawTexture(grassSprite, int32(j*tileSize), int32(i*tileSize), rl.White)
+		}
+	}
+	Character.DrawPlayer(framecount, state)
+	PauseButton.DrawButton(framecount)
 
 }
 func main() {
-
-	initialize()
 
 	for running {
 		input()
