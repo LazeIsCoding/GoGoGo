@@ -9,28 +9,39 @@ const (
 )
 
 type Button struct {
-	X       int32
-	Y       int32
-	Active  bool
-	Hovered bool
-	Type    int32
-	Sprite  rl.Texture2D
+	X             int32
+	Y             int32
+	Active        bool
+	Hovered       bool
+	Pressed       bool
+	Type          int32
+	Bounds        rl.Rectangle
+	Sprite        rl.Texture2D
+	SpritePressed rl.Texture2D
 }
 
-func NewButton(x, y, Type int32, spritePath string) *Button {
+func NewButton(x, y, Type int32, spritePath, spritePressedPath string) *Button {
 	sprite := rl.LoadTexture(spritePath)
+	spritePressed := rl.LoadTexture(spritePressedPath)
+
 	return &Button{
-		X:       x,
-		Y:       y,
-		Sprite:  sprite,
-		Active:  true,
-		Hovered: false,
-		Type:    Type,
+		X:             x,
+		Y:             y,
+		Sprite:        sprite,
+		SpritePressed: spritePressed,
+		Active:        true,
+		Hovered:       false,
+		Pressed:       false,
+		Type:          Type,
 	}
 }
 
 func (b *Button) DrawButton(framecount int) {
-	rl.DrawTexture(b.Sprite, b.X, b.Y, rl.White)
+	if !b.Pressed {
+		rl.DrawTexture(b.Sprite, b.X, b.Y, rl.White)
+	} else {
+		rl.DrawTexture(b.SpritePressed, b.X, b.Y, rl.White)
+	}
 }
 func (b *Button) SetPos(x, y float32) {
 	b.X = int32(x)

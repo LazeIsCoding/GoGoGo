@@ -13,7 +13,7 @@ const (
 	tileSize     = 16
 	mapWidth     = 100
 	mapHeight    = 80
-	zoom         = 3
+	zoom         = 4
 )
 
 var (
@@ -24,6 +24,8 @@ var (
 
 	Character   *ent.Player
 	PauseButton *ui.Button
+
+	mousePos rl.Vector2
 
 	playerUp, playerDown, playerRight, playerLeft bool
 	playerMoving                                  bool
@@ -36,6 +38,7 @@ var (
 
 func init() {
 	state = 0
+
 	rl.SetExitKey(0)
 	rl.SetTargetFPS(60)
 	rl.InitWindow(screenWidth, screenHeight, "CozyTown")
@@ -49,12 +52,23 @@ func init() {
 	}
 
 	Character = ent.NewPlayer(200, 100, 100, 1, "Assets/PlayerFemale.png")
-	PauseButton = ui.NewButton(0, 0, 0, "Assets/Buttons/pausebutton.png")
+	PauseButton = ui.NewButton(0, 0, 0, "Assets/Buttons/pausebutton.png", "Assets/Buttons/pausebutton_pressed.png")
 	cam = rl.NewCamera2D(rl.NewVector2(screenWidth/2, screenHeight/2), rl.NewVector2(float32(Character.X)+Character.Width/2, float32(Character.Y)+Character.Height/2), 0, zoom)
 
 }
 
 func input() {
+
+	PauseButton.Bounds = rl.NewRectangle(0, 0, float32(PauseButton.Sprite.Width)*zoom, float32(PauseButton.Sprite.Height)*zoom)
+
+	mousePos = rl.GetMousePosition()
+
+	if rl.CheckCollisionPointRec(mousePos, PauseButton.Bounds) {
+		if rl.IsMouseButtonDown(rl.MouseButtonLeft) {
+			PauseButton.Pressed = true
+		}
+	}
+
 	if rl.IsKeyDown(rl.KeyW) || rl.IsKeyDown(rl.KeyUp) {
 		playerMoving = true
 		playerUp = true
@@ -74,7 +88,10 @@ func input() {
 	if rl.IsKeyPressed(rl.KeyF) {
 		rl.ToggleFullscreen()
 	}
-
+	if rl.IsMouseButtonReleased(rl.MouseButtonLeft) {
+		fmt.Print("hi")
+		PauseButton.Pressed = false
+	}
 }
 
 func update() {
@@ -99,7 +116,6 @@ func update() {
 	playerUp, playerDown, playerRight, playerLeft = false, false, false, false
 
 	cam.Target = rl.NewVector2(float32(Character.X)+Character.Width/2, float32(Character.Y)+Character.Height/2)
-	fmt.Println("X:", cam.Target.X-screenWidth/2, " Y:", cam.Target.Y-screenHeight/2)
 	PauseButton.SetPos(cam.Target.X-(screenWidth/(2*zoom)-1), cam.Target.Y-(screenHeight/(2*zoom))+1)
 }
 
@@ -128,6 +144,7 @@ func drawScene() {
 	PauseButton.DrawButton(framecount)
 
 }
+
 func main() {
 
 	for running {
