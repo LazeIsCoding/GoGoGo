@@ -23,8 +23,8 @@ func NewPlayer(x, y, health, speed int32, spritePath string) *Player {
 		Health: health,
 		Speed:  speed,
 		Sprite: sprite,
-		Width:  float32(sprite.Width),
-		Height: float32(sprite.Height),
+		Width:  32,
+		Height: 32,
 	}
 }
 
@@ -38,5 +38,13 @@ func (p *Player) ToString() string {
 	return s
 }
 func (p *Player) DrawPlayer(framecount, state int) {
-	rl.DrawTexture(p.Sprite, p.X, p.Y, rl.White)
+	//rl.DrawTexture(p.Sprite, p.X, p.Y, rl.White)
+	fmt.Println(float32(p.X), " ", p.Y)
+	rl.DrawTexturePro(p.Sprite,
+		rl.NewRectangle(0, 64, p.Width, p.Height),
+		rl.NewRectangle(float32(p.X), float32(p.Y), p.Width, p.Height),
+		rl.NewVector2(float32(p.X), float32(p.Y)),
+		0,
+		rl.White)
+
 }
