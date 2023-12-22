@@ -13,7 +13,7 @@ const (
 	tileSize     = 16
 	mapWidth     = 100
 	mapHeight    = 80
-	zoom         = 4
+	zoom         = 2
 )
 
 var (
@@ -51,7 +51,7 @@ func init() {
 		}
 	}
 
-	Character = ent.NewPlayer(200, 100, 100, 1, "Assets/PlayerFemale.png")
+	Character = ent.NewPlayer(200, 100, 100, 1, "Assets/PlayerFemaleAnim.png")
 	PauseButton = ui.NewButton(0, 0, 0, "Assets/Buttons/pausebutton.png", "Assets/Buttons/pausebutton_pressed.png")
 	cam = rl.NewCamera2D(rl.NewVector2(screenWidth/2, screenHeight/2), rl.NewVector2(float32(Character.X)+Character.Width/2, float32(Character.Y)+Character.Height/2), 0, zoom)
 
@@ -64,8 +64,8 @@ func input() {
 	mousePos = rl.GetMousePosition()
 
 	if rl.CheckCollisionPointRec(mousePos, PauseButton.Bounds) {
-		if rl.IsMouseButtonDown(rl.MouseButtonLeft) {
-			PauseButton.Pressed = true
+		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
+			PauseButton.OnClick()
 		}
 	}
 

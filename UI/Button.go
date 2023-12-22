@@ -1,11 +1,15 @@
 package UI
 
-import rl "github.com/gen2brain/raylib-go/raylib"
+import (
+	"fmt"
+	rl "github.com/gen2brain/raylib-go/raylib"
+)
 
 const (
-	Pause    int = 0
-	Continue     = 1
-	Exit         = 2
+	Pause    int32 = 0
+	Continue       = 1
+	Option         = 2
+	Exit           = 3
 )
 
 type Button struct {
@@ -46,4 +50,22 @@ func (b *Button) DrawButton(framecount int) {
 func (b *Button) SetPos(x, y float32) {
 	b.X = int32(x)
 	b.Y = int32(y)
+}
+
+func (b *Button) OnClick() {
+	b.Pressed = true
+	action(b.Type)
+}
+
+func action(Type int32) {
+	switch Type {
+	case Pause:
+		fmt.Print("Pause")
+	case Continue:
+		fmt.Print("Continue")
+	case Option:
+		fmt.Print("Option")
+	case Exit:
+		fmt.Print("Exit")
+	}
 }
