@@ -13,36 +13,40 @@ const (
 	tileSize     = 16
 	mapWidth     = 100
 	mapHeight    = 80
-	zoom         = 2
+	zoom         = 4
 )
 
 var (
 	running = true
 
-	tileMap     [][]int
-	grassSprite rl.Texture2D
+	tileMap      [][]int
+	grassSprite  rl.Texture2D
+	cursorSprite rl.Texture2D
+
+	mouseWheelUsage float32
 
 	Character   *ent.Player
 	PauseButton *ui.Button
+	ItemBar     *ui.ItemBar
 
 	mousePos rl.Vector2
 
 	playerUp, playerDown, playerRight, playerLeft bool
 	playerMoving                                  bool
 
-	state      int
 	framecount int
 
 	cam rl.Camera2D
 )
 
 func init() {
-	state = 0
-
+	
 	rl.SetExitKey(0)
 	rl.SetTargetFPS(60)
 	rl.InitWindow(screenWidth, screenHeight, "CozyTown")
+	cursorSprite = rl.LoadTexture("Assets/Cursor/cursor_std.png")
 	grassSprite = rl.LoadTexture("Assets/Tiles/grass_1.png")
+
 	tileMap = make([][]int, mapHeight)
 	for i := range tileMap {
 		tileMap[i] = make([]int, mapWidth)
@@ -53,7 +57,8 @@ func init() {
 
 	Character = ent.NewPlayer(200, 100, 100, 1, "Assets/PlayerFemaleAnim.png")
 	PauseButton = ui.NewButton(0, 0, 0, "Assets/Buttons/pausebutton.png", "Assets/Buttons/pausebutton_pressed.png")
-	cam = rl.NewCamera2D(rl.NewVector2(screenWidth/2, screenHeight/2), rl.NewVector2(float32(Character.X)+Character.Width/2, float32(Character.Y)+Character.Height/2), 0, zoom)
+	ItemBar = ui.NewItemBar(screenWidth/2, screenHeight-18, "Assets/ItemBar/item_bar.png", "Assets/ItemBar/item_bar_sel.png")
+	cam = rl.NewCamera2D(rl.NewVector2(screenWidth/2, screenHeight/2), rl.NewVector2(Character.GetX()+Character.GetWidth()/2, Character.GetWidth()+Character.GetHeight()/2), 0, zoom)
 
 }
 
@@ -61,7 +66,13 @@ func input() {
 
 	PauseButton.Bounds = rl.NewRectangle(0, 0, float32(PauseButton.Sprite.Width)*zoom, float32(PauseButton.Sprite.Height)*zoom)
 
+	mouseWheelUsage = rl.GetMouseWheelMove()
 	mousePos = rl.GetMousePosition()
+
+	if mouseWheelUsage != 0 {
+		ItemBar.Selected = (ItemBar.Selected + int32(mouseWheelUsage) + ItemBar.ItemCount) % ItemBar.ItemCount
+		fmt.Println(ItemBar.Selected)
+	}
 
 	if rl.CheckCollisionPointRec(mousePos, PauseButton.Bounds) {
 		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
@@ -99,24 +110,33 @@ func update() {
 	if playerMoving {
 		if playerUp {
 			Character.Move(0, -Character.Speed)
+			Character.State = 2
 		}
 		if playerDown {
 			Character.Move(0, Character.Speed)
+			Character.State = 1
 		}
 		if playerLeft {
 			Character.Move(-Character.Speed, 0)
+			Character.State = 4
 		}
 		if playerRight {
 			Character.Move(Character.Speed, 0)
+			Character.State = 3
 		}
 	}
-	framecount++
 
+	if !playerMoving {
+		Character.State = 0
+	}
+
+	framecount++
 	playerMoving = false
 	playerUp, playerDown, playerRight, playerLeft = false, false, false, false
 
-	cam.Target = rl.NewVector2(float32(Character.X)+Character.Width/2, float32(Character.Y)+Character.Height/2)
+	cam.Target = rl.NewVector2(Character.GetX()-Character.GetWidth()/2, Character.GetY()-Character.GetHeight()/2)
 	PauseButton.SetPos(cam.Target.X-(screenWidth/(2*zoom)-1), cam.Target.Y-(screenHeight/(2*zoom))+1)
+	ItemBar.SetPos(cam.Target.X-float32(ItemBar.Sprite.Width/2), cam.Target.Y+(screenHeight/(2*zoom))-float32(ItemBar.Sprite.Height+2))
 }
 
 func render() {
@@ -140,9 +160,10 @@ func drawScene() {
 			rl.DrawTexture(grassSprite, int32(j*tileSize), int32(i*tileSize), rl.White)
 		}
 	}
-	Character.DrawPlayer(framecount, state)
-	PauseButton.DrawButton(framecount)
+	Character.DrawPlayer(framecount)
 
+	PauseButton.DrawButton(framecount)
+	ItemBar.DrawItemBar()
 }
 
 func main() {

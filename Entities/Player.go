@@ -6,45 +6,64 @@ import (
 )
 
 type Player struct {
-	Y      int32
-	X      int32
-	Health int32
-	Speed  int32
-	Width  float32
-	Height float32
-	Sprite rl.Texture2D
+	Pos         rl.Rectangle
+	Src         rl.Rectangle
+	Health      int32
+	Speed       float32
+	Sprite      rl.Texture2D
+	State       int32
+	spriteCount int32
 }
 
-func NewPlayer(x, y, health, speed int32, spritePath string) *Player {
+func NewPlayer(x, y, health int32, speed float32, spritePath string) *Player {
 	sprite := rl.LoadTexture(spritePath)
+	pos := rl.NewRectangle(float32(x), float32(y), 32, 32)
+	src := rl.NewRectangle(0, 32, pos.Width, pos.Height)
+
 	return &Player{
-		X:      x,
-		Y:      y,
-		Health: health,
-		Speed:  speed,
-		Sprite: sprite,
-		Width:  32,
-		Height: 32,
+		Pos:         pos,
+		Src:         src,
+		Health:      health,
+		Speed:       speed,
+		Sprite:      sprite,
+		spriteCount: 0,
 	}
 }
 
-func (p *Player) Move(x, y int32) {
-	p.X += x
-	p.Y += y
+func (p *Player) Move(x, y float32) {
+	p.Pos.X += x
+	p.Pos.Y += y
 }
 
 func (p *Player) ToString() string {
-	s := fmt.Sprint("X: ", p.X, "Y: ", p.Y)
+	s := fmt.Sprint("X: ", p.Pos.X, "Y: ", p.Pos.Y)
 	return s
 }
-func (p *Player) DrawPlayer(framecount, state int) {
-	//rl.DrawTexture(p.Sprite, p.X, p.Y, rl.White)
-	fmt.Println(float32(p.X), " ", p.Y)
-	rl.DrawTexturePro(p.Sprite,
-		rl.NewRectangle(0, 64, p.Width, p.Height),
-		rl.NewRectangle(float32(p.X), float32(p.Y), p.Width, p.Height),
-		rl.NewVector2(float32(p.X), float32(p.Y)),
-		0,
-		rl.White)
+func (p *Player) DrawPlayer(framecount int) {
+	//rl.DrawTexture(p.Sprite, int32(p.GetX()), int32(p.GetY()), rl.White)
+	//fmt.Printf()
+	//rl.DrawTexturePro(playerSprite, playerSrc, playerDest, rl.NewVector2(playerDest.Width, playerDest.Height), 0, rl.White)
 
+	if framecount%12 == 0 {
+		p.spriteCount = (p.spriteCount + 1) % 8
+	}
+	p.Src.Y = float32(32 * p.spriteCount)
+	p.Src.X = float32(32 * p.State)
+
+	rl.DrawTexturePro(p.Sprite, p.Src, p.Pos, rl.NewVector2(p.GetWidth(), p.GetHeight()), 0, rl.White)
+
+}
+func (p *Player) GetX() float32 {
+	return p.Pos.X
+}
+
+func (p *Player) GetY() float32 {
+	return p.Pos.Y
+}
+
+func (p *Player) GetWidth() float32 {
+	return p.Pos.Width
+}
+func (p *Player) GetHeight() float32 {
+	return p.Pos.Height
 }
