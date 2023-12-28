@@ -2,26 +2,32 @@ package main
 
 import (
 	ent "GoGoGo/Entities"
+	"GoGoGo/TileMaps"
 	ui "GoGoGo/UI"
 	"fmt"
 	rl "github.com/gen2brain/raylib-go/raylib"
+	"math"
 )
 
 const (
 	screenWidth  = 800
 	screenHeight = 600
 	tileSize     = 16
-	mapWidth     = 100
-	mapHeight    = 80
 	zoom         = 4
 )
 
 var (
 	running = true
 
+	dir          rl.Vector2
 	tileMap      [][]int
 	grassSprite  rl.Texture2D
+	rockSprite   rl.Texture2D
 	cursorSprite rl.Texture2D
+	Obstacles    []rl.Rectangle
+
+	mapWidth  int32
+	mapHeight int32
 
 	mouseWheelUsage float32
 
@@ -40,31 +46,35 @@ var (
 )
 
 func init() {
-	
+
 	rl.SetExitKey(0)
 	rl.SetTargetFPS(60)
+
 	rl.InitWindow(screenWidth, screenHeight, "CozyTown")
+	Obstacles = []rl.Rectangle{}
 	cursorSprite = rl.LoadTexture("Assets/Cursor/cursor_std.png")
 	grassSprite = rl.LoadTexture("Assets/Tiles/grass_1.png")
+	rockSprite = rl.LoadTexture("Assets/Tiles/rock_1.png")
+	tileMap, mapWidth, mapHeight = TileMaps.LoadMap("Assets/Maps/map3.tmj")
 
-	tileMap = make([][]int, mapHeight)
 	for i := range tileMap {
-		tileMap[i] = make([]int, mapWidth)
 		for j := range tileMap[i] {
-			tileMap[i][j] = 0
+			if tileMap[i][j] == 2 {
+				Obstacles = append(Obstacles, rl.NewRectangle(float32(j*tileSize), float32(i*tileSize), 16, 16))
+			}
 		}
 	}
 
-	Character = ent.NewPlayer(200, 100, 100, 1, "Assets/PlayerFemaleAnim.png")
+	Character = ent.NewPlayer(200, 200, 100, 1, "Assets/PlayerFemaleAnim.png")
 	PauseButton = ui.NewButton(0, 0, 0, "Assets/Buttons/pausebutton.png", "Assets/Buttons/pausebutton_pressed.png")
-	ItemBar = ui.NewItemBar(screenWidth/2, screenHeight-18, "Assets/ItemBar/item_bar.png", "Assets/ItemBar/item_bar_sel.png")
+	ItemBar = ui.NewItemBar(screenWidth/2, screenHeight-18, "Assets/ItemBar/item_bar.png", "Assets/ItemBar/item_bar_sel.png", "")
 	cam = rl.NewCamera2D(rl.NewVector2(screenWidth/2, screenHeight/2), rl.NewVector2(Character.GetX()+Character.GetWidth()/2, Character.GetWidth()+Character.GetHeight()/2), 0, zoom)
-
+	dir = rl.NewVector2(0, 0)
 }
 
 func input() {
-
-	PauseButton.Bounds = rl.NewRectangle(0, 0, float32(PauseButton.Sprite.Width)*zoom, float32(PauseButton.Sprite.Height)*zoom)
+	dir.X = 0
+	dir.Y = 0
 
 	mouseWheelUsage = rl.GetMouseWheelMove()
 	mousePos = rl.GetMousePosition()
@@ -74,6 +84,7 @@ func input() {
 		fmt.Println(ItemBar.Selected)
 	}
 
+	PauseButton.Bounds = rl.NewRectangle(0, 0, float32(PauseButton.Sprite.Width)*zoom, float32(PauseButton.Sprite.Height)*zoom)
 	if rl.CheckCollisionPointRec(mousePos, PauseButton.Bounds) {
 		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
 			PauseButton.OnClick()
@@ -81,18 +92,23 @@ func input() {
 	}
 
 	if rl.IsKeyDown(rl.KeyW) || rl.IsKeyDown(rl.KeyUp) {
+		dir.Y -= Character.Speed
 		playerMoving = true
 		playerUp = true
+		fmt.Print("Helloooo")
 	}
 	if rl.IsKeyDown(rl.KeyS) || rl.IsKeyDown(rl.KeyDown) {
+		dir.Y += Character.Speed
 		playerMoving = true
 		playerDown = true
 	}
 	if rl.IsKeyDown(rl.KeyA) || rl.IsKeyDown(rl.KeyLeft) {
+		dir.X -= Character.Speed
 		playerMoving = true
 		playerLeft = true
 	}
 	if rl.IsKeyDown(rl.KeyD) || rl.IsKeyDown(rl.KeyRight) {
+		dir.X += Character.Speed
 		playerMoving = true
 		playerRight = true
 	}
@@ -100,17 +116,24 @@ func input() {
 		rl.ToggleFullscreen()
 	}
 	if rl.IsMouseButtonReleased(rl.MouseButtonLeft) {
-		fmt.Print("hi")
 		PauseButton.Pressed = false
+	}
+
+	for _, rec := range Obstacles {
+		if rl.CheckCollisionRecs(rl.NewRectangle(Character.Pos.X+dir.X, Character.Pos.Y+dir.Y, Character.GetWidth(), Character.GetHeight()), rec) {
+			playerMoving = false
+		}
 	}
 }
 
 func update() {
 	running = !rl.WindowShouldClose()
+
 	if playerMoving {
 		if playerUp {
 			Character.Move(0, -Character.Speed)
 			Character.State = 2
+
 		}
 		if playerDown {
 			Character.Move(0, Character.Speed)
@@ -124,8 +147,8 @@ func update() {
 			Character.Move(Character.Speed, 0)
 			Character.State = 3
 		}
-	}
 
+	}
 	if !playerMoving {
 		Character.State = 0
 	}
@@ -134,9 +157,9 @@ func update() {
 	playerMoving = false
 	playerUp, playerDown, playerRight, playerLeft = false, false, false, false
 
-	cam.Target = rl.NewVector2(Character.GetX()-Character.GetWidth()/2, Character.GetY()-Character.GetHeight()/2)
-	PauseButton.SetPos(cam.Target.X-(screenWidth/(2*zoom)-1), cam.Target.Y-(screenHeight/(2*zoom))+1)
+	cam.Target = rl.NewVector2(float32(math.Round(float64(Character.GetX()+Character.GetWidth()/2))), float32(math.Round(float64(Character.GetY()+Character.GetHeight()/2))))
 	ItemBar.SetPos(cam.Target.X-float32(ItemBar.Sprite.Width/2), cam.Target.Y+(screenHeight/(2*zoom))-float32(ItemBar.Sprite.Height+2))
+	PauseButton.SetPos(cam.Target.X-(screenWidth/(2*zoom)), cam.Target.Y-(screenHeight/(2*zoom)))
 }
 
 func render() {
@@ -147,6 +170,7 @@ func render() {
 	drawScene()
 	rl.EndMode2D()
 	rl.EndDrawing()
+
 }
 
 func quit() {
@@ -157,11 +181,16 @@ func quit() {
 func drawScene() {
 	for i := range tileMap {
 		for j := range tileMap[i] {
-			rl.DrawTexture(grassSprite, int32(j*tileSize), int32(i*tileSize), rl.White)
+
+			switch tileMap[i][j] {
+			case 1:
+				rl.DrawTexture(grassSprite, int32(j*tileSize), int32(i*tileSize), rl.White)
+			case 2:
+				rl.DrawTexture(rockSprite, int32(j*tileSize), int32(i*tileSize), rl.White)
+			}
 		}
 	}
 	Character.DrawPlayer(framecount)
-
 	PauseButton.DrawButton(framecount)
 	ItemBar.DrawItemBar()
 }

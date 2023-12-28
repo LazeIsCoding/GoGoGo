@@ -17,7 +17,7 @@ type Player struct {
 
 func NewPlayer(x, y, health int32, speed float32, spritePath string) *Player {
 	sprite := rl.LoadTexture(spritePath)
-	pos := rl.NewRectangle(float32(x), float32(y), 32, 32)
+	pos := rl.NewRectangle(float32(x), float32(y), 13, 19)
 	src := rl.NewRectangle(0, 32, pos.Width, pos.Height)
 
 	return &Player{
@@ -44,13 +44,13 @@ func (p *Player) DrawPlayer(framecount int) {
 	//fmt.Printf()
 	//rl.DrawTexturePro(playerSprite, playerSrc, playerDest, rl.NewVector2(playerDest.Width, playerDest.Height), 0, rl.White)
 
-	if framecount%12 == 0 {
+	if framecount%15 == 0 {
 		p.spriteCount = (p.spriteCount + 1) % 8
 	}
 	p.Src.Y = float32(32 * p.spriteCount)
 	p.Src.X = float32(32 * p.State)
 
-	rl.DrawTexturePro(p.Sprite, p.Src, p.Pos, rl.NewVector2(p.GetWidth(), p.GetHeight()), 0, rl.White)
+	rl.DrawTexturePro(p.Sprite, p.Src, p.Pos, rl.NewVector2(0, 0), 0, rl.White)
 
 }
 func (p *Player) GetX() float32 {
