@@ -10,24 +10,22 @@ import (
 )
 
 const (
-	screenWidth  = 800
-	screenHeight = 600
+	screenWidth  = 1600
+	screenHeight = 900
 	tileSize     = 16
 	zoom         = 4
 )
 
 var (
-	running = true
-
+	running      = true
 	dir          rl.Vector2
 	tileMap      [][]int
 	grassSprite  rl.Texture2D
 	rockSprite   rl.Texture2D
 	cursorSprite rl.Texture2D
 	Obstacles    []rl.Rectangle
-
-	mapWidth  int32
-	mapHeight int32
+	mapWidth     int32
+	mapHeight    int32
 
 	mouseWheelUsage float32
 
@@ -45,12 +43,26 @@ var (
 	cam rl.Camera2D
 )
 
-func init() {
+func numberOfSteps(num int) int {
+	count := 0
+	for num != 0 {
+		if num%2 == 0 {
+			num /= 2
+		} else {
+			num -= 1
+		}
+		count++
+	}
+	return count
+}
 
+func init() {
+	fmt.Println(numberOfSteps(14))
 	rl.SetExitKey(0)
 	rl.SetTargetFPS(60)
+	rl.SetWindowMonitor(2)
+	rl.InitWindow(screenWidth, screenHeight, "")
 
-	rl.InitWindow(screenWidth, screenHeight, "CozyTown")
 	Obstacles = []rl.Rectangle{}
 	cursorSprite = rl.LoadTexture("Assets/Cursor/cursor_std.png")
 	grassSprite = rl.LoadTexture("Assets/Tiles/grass_1.png")
@@ -95,7 +107,6 @@ func input() {
 		dir.Y -= Character.Speed
 		playerMoving = true
 		playerUp = true
-		fmt.Print("Helloooo")
 	}
 	if rl.IsKeyDown(rl.KeyS) || rl.IsKeyDown(rl.KeyDown) {
 		dir.Y += Character.Speed
@@ -115,6 +126,7 @@ func input() {
 	if rl.IsKeyPressed(rl.KeyF) {
 		rl.ToggleFullscreen()
 	}
+
 	if rl.IsMouseButtonReleased(rl.MouseButtonLeft) {
 		PauseButton.Pressed = false
 	}
@@ -179,9 +191,10 @@ func quit() {
 }
 
 func drawScene() {
-	for i := range tileMap {
-		for j := range tileMap[i] {
 
+	//Loading only a slightly bigger chunk than the screen size
+	for i := int(math.Max(0, float64(Character.GetY()/tileSize-40/zoom))); i < int(math.Min(float64(mapHeight), float64(Character.GetY()/tileSize+44/zoom))); i++ {
+		for j := int(math.Max(0, float64(Character.GetX()/tileSize-52/zoom))); j < int(math.Min(float64(mapWidth), float64(Character.GetX()/tileSize+64/zoom))); j++ {
 			switch tileMap[i][j] {
 			case 1:
 				rl.DrawTexture(grassSprite, int32(j*tileSize), int32(i*tileSize), rl.White)
@@ -190,6 +203,7 @@ func drawScene() {
 			}
 		}
 	}
+
 	Character.DrawPlayer(framecount)
 	PauseButton.DrawButton(framecount)
 	ItemBar.DrawItemBar()
