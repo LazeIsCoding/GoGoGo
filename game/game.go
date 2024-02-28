@@ -6,6 +6,7 @@ import (
 	ui "GoGoGo/UI"
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"math"
+	"math/rand"
 )
 
 const (
@@ -31,6 +32,9 @@ var (
 	Character   *ent.Player
 	PauseButton *ui.Button
 	ItemBar     *ui.ItemBar
+	Butterflies []*ent.Butterfly
+
+	Rand *rand.Rand
 
 	mouseWheelUsage float32
 
@@ -51,6 +55,7 @@ func init() {
 	initTextures()
 
 	Obstacles = []rl.Rectangle{}
+	Butterflies = []*ent.Butterfly{}
 
 	tileMap, mapWidth, mapHeight = TileMaps.LoadMap("Assets/Maps/map3.tmj")
 
@@ -115,16 +120,11 @@ func input() {
 		PauseButton.Pressed = false
 	}
 
-	for _, rec := range Obstacles {
-		if rl.CheckCollisionRecs(rl.NewRectangle(Character.Pos.X+dir.X, Character.Pos.Y+dir.Y, Character.GetWidth(), Character.GetHeight()), rec) {
-			playerMoving = false
-		}
-	}
 }
 
 func update() {
 	running = !rl.WindowShouldClose()
-
+	checkCollisions()
 	if playerMoving {
 		if playerDown {
 			Character.Move(0, Character.Speed)
@@ -151,10 +151,13 @@ func update() {
 	framecount++
 	playerMoving = false
 	playerUp, playerDown, playerRight, playerLeft = false, false, false, false
-
+	for _, but := range Butterflies {
+		but.Move()
+	}
 	cam.Target = rl.NewVector2(float32(math.Round(float64(Character.GetX()+Character.GetWidth()/2))), float32(math.Round(float64(Character.GetY()+Character.GetHeight()/2))))
 	ItemBar.SetPos(cam.Target.X-float32(ItemBar.Sprite.Width/2), cam.Target.Y+(screenHeight/(2*zoom))-float32(ItemBar.Sprite.Height+2))
 	PauseButton.SetPos(cam.Target.X-(screenWidth/(2*zoom)), cam.Target.Y-(screenHeight/(2*zoom)))
+	spawnEntities(framecount)
 }
 
 func render() {
@@ -181,7 +184,6 @@ func initTextures() {
 }
 func initEntities() {
 	Character = ent.NewPlayer(200, 200, 100, 1, "Assets/PlayerFemaleAnim.png")
-
 	PauseButton = ui.NewButton(0, 0, 0, "Assets/Buttons/pausebutton.png", "Assets/Buttons/pausebutton_pressed.png")
 	PauseButton.Bounds = rl.NewRectangle(0, 0, float32(PauseButton.Sprite.Width)*zoom, float32(PauseButton.Sprite.Height)*zoom)
 
@@ -203,11 +205,40 @@ func drawScene() {
 			}
 		}
 	}
+
 	Character.DrawPlayer(framecount)
+	for _, but := range Butterflies {
+		but.Draw(framecount)
+	}
 	PauseButton.DrawButton(framecount)
 	ItemBar.DrawItemBar()
 }
 
+func checkCollisions() {
+	for _, rec := range Obstacles {
+		if rl.CheckCollisionRecs(rl.NewRectangle(Character.Pos.X+dir.X, Character.Pos.Y+dir.Y, Character.GetWidth(), Character.GetHeight()), rec) {
+			playerMoving = false
+		}
+	}
+	if true {
+		for i, rec := range Butterflies {
+			if rl.CheckCollisionRecs(Character.Pos, rec.Pos) {
+				Butterflies = append(Butterflies[:i], Butterflies[i+1:]...)
+				break
+			}
+		}
+	}
+}
+
+func spawnEntities(framecount int) {
+	if framecount%5 == 0 {
+
+		if rand.Float32() > 0.5 {
+			Butterflies = append(Butterflies, ent.NewButterfly(200, 200, "Assets/Entities/Butterflies/butterfly_yellow_anim.png"))
+		}
+	}
+
+}
 func main() {
 
 	for running {
