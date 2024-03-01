@@ -12,8 +12,8 @@ import (
 const (
 	screenWidth  = 1600
 	screenHeight = 900
-	tileSize     = 16
-	zoom         = 4
+	tileSize     = 64
+	zoom         = 1.5
 )
 
 var (
@@ -63,7 +63,7 @@ func init() {
 	for i := range tileMap {
 		for j := range tileMap[i] {
 			if tileMap[i][j] == 2 {
-				Obstacles = append(Obstacles, rl.NewRectangle(float32(j*tileSize), float32(i*tileSize), 16, 16))
+				Obstacles = append(Obstacles, rl.NewRectangle(float32(j*tileSize), float32(i*tileSize), tileSize, tileSize))
 			}
 		}
 	}
@@ -183,7 +183,7 @@ func initTextures() {
 	rockSprite = rl.LoadTexture("Assets/Tiles/rock_1.png")
 }
 func initEntities() {
-	Character = ent.NewPlayer(200, 200, 100, 1, "Assets/PlayerFemaleAnim.png")
+	Character = ent.NewPlayer(1500, 1500, 100, 4, "Assets/PlayerFemaleAnim.png")
 	PauseButton = ui.NewButton(0, 0, 0, "Assets/Buttons/pausebutton.png", "Assets/Buttons/pausebutton_pressed.png")
 	PauseButton.Bounds = rl.NewRectangle(0, 0, float32(PauseButton.Sprite.Width)*zoom, float32(PauseButton.Sprite.Height)*zoom)
 
@@ -232,9 +232,8 @@ func checkCollisions() {
 
 func spawnEntities(framecount int) {
 	if framecount%5 == 0 {
-
 		if rand.Float32() > 0.5 {
-			Butterflies = append(Butterflies, ent.NewButterfly(200, 200, "Assets/Entities/Butterflies/butterfly_yellow_anim.png"))
+			Butterflies = append(Butterflies, ent.NewButterfly(2000, 2000, "Assets/Entities/Butterflies/butterfly_yellow_anim.png"))
 		}
 	}
 
