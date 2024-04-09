@@ -2,6 +2,7 @@ package main
 
 import (
 	ent "GoGoGo/Entities"
+	inv "GoGoGo/Inventory"
 	"GoGoGo/TileMaps"
 	ui "GoGoGo/UI"
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -32,9 +33,8 @@ var (
 	Character   *ent.Player
 	PauseButton *ui.Button
 	ItemBar     *ui.ItemBar
+	Inventory   *inv.Inventory
 	Butterflies []*ent.Butterfly
-
-	Rand *rand.Rand
 
 	mouseWheelUsage float32
 
@@ -48,6 +48,7 @@ var (
 )
 
 func init() {
+
 	rl.SetExitKey(0)
 	rl.SetTargetFPS(60)
 	rl.SetWindowMonitor(2)
@@ -57,6 +58,7 @@ func init() {
 	Obstacles = []rl.Rectangle{}
 	Butterflies = []*ent.Butterfly{}
 
+	//Load Map and initialize mapWidth and Height
 	tileMap, mapWidth, mapHeight = TileMaps.LoadMap("Assets/Maps/map3.tmj")
 
 	//Add CollisionObjects to Obstacles array
@@ -68,10 +70,15 @@ func init() {
 		}
 	}
 
+	// initialize all Entities that live over the whole game
 	initEntities()
 
 	dir = rl.NewVector2(0, 0)
 }
+
+/**
+Get the user input and determine if the player should be moved in the next frame
+*/
 
 func input() {
 	dir.X = 0
@@ -82,7 +89,7 @@ func input() {
 
 	//Change selected item based on mouseWheelUsage
 	if mouseWheelUsage != 0 {
-		ItemBar.Selected = (ItemBar.Selected - int32(mouseWheelUsage) + ItemBar.ItemCount) % ItemBar.ItemCount
+		ItemBar.Selected = (ItemBar.Selected - int32(mouseWheelUsage) + int32(ItemBar.ItemCount)) % int32(ItemBar.ItemCount)
 	}
 
 	//check Collision with mousePos
@@ -122,6 +129,7 @@ func input() {
 
 }
 
+// Update the state of all Entities/Projectiles...
 func update() {
 	running = !rl.WindowShouldClose()
 	checkCollisions()
@@ -148,22 +156,31 @@ func update() {
 		Character.State = 0
 	}
 
+	//Count the frames to display the right sprite in animation
 	framecount++
+
+	//Reset the Movement for the next frame
 	playerMoving = false
 	playerUp, playerDown, playerRight, playerLeft = false, false, false, false
+
+	//Example for-loop for enemy movement, could be extracted to a method for all Entity-movement
 	for _, but := range Butterflies {
 		but.Move()
 	}
+
+	//Adjusting the Camera, ItemBar, PauseButton relative to the screen
 	cam.Target = rl.NewVector2(float32(math.Round(float64(Character.GetX()+Character.GetWidth()/2))), float32(math.Round(float64(Character.GetY()+Character.GetHeight()/2))))
 	ItemBar.SetPos(cam.Target.X-float32(ItemBar.Sprite.Width/2), cam.Target.Y+(screenHeight/(2*zoom))-float32(ItemBar.Sprite.Height+2))
 	PauseButton.SetPos(cam.Target.X-(screenWidth/(2*zoom)), cam.Target.Y-(screenHeight/(2*zoom)))
+
+	//example for spawning enemies. You could also use a global queue so that all elements can queue an enemyspawn and then spawn all the enemies that should be spawned
 	spawnEntities(framecount)
 }
 
 func render() {
+	//Call all relevant methods to display stuff
 	rl.BeginDrawing()
 	rl.ClearBackground(rl.White)
-
 	rl.BeginMode2D(cam)
 	drawScene()
 	rl.EndMode2D()
@@ -183,11 +200,13 @@ func initTextures() {
 	rockSprite = rl.LoadTexture("Assets/Tiles/rock_1.png")
 }
 func initEntities() {
+
 	Character = ent.NewPlayer(1500, 1500, 100, 4, "Assets/PlayerFemaleAnim.png")
+	Inventory = inv.InitInv(16)
 	PauseButton = ui.NewButton(0, 0, 0, "Assets/Buttons/pausebutton.png", "Assets/Buttons/pausebutton_pressed.png")
 	PauseButton.Bounds = rl.NewRectangle(0, 0, float32(PauseButton.Sprite.Width)*zoom, float32(PauseButton.Sprite.Height)*zoom)
 
-	ItemBar = ui.NewItemBar(screenWidth/2, screenHeight-18, "Assets/ItemBar/item_bar.png", "Assets/ItemBar/item_bar_sel.png", "")
+	ItemBar = ui.NewItemBar(screenWidth/2, screenHeight-18, "Assets/ItemBar/item_bar.png", "Assets/ItemBar/item_bar_sel.png", "", Inventory.Inv)
 	cam = rl.NewCamera2D(rl.NewVector2(screenWidth/2, screenHeight/2), rl.NewVector2(Character.GetX()+Character.GetWidth()/2, Character.GetWidth()+Character.GetHeight()/2), 0, zoom)
 }
 
@@ -214,6 +233,7 @@ func drawScene() {
 	ItemBar.DrawItemBar()
 }
 
+// Check for Rectangle intersections of all available entities and the player. Needs to be extended for enemy to enemy collision
 func checkCollisions() {
 	for _, rec := range Obstacles {
 		if rl.CheckCollisionRecs(rl.NewRectangle(Character.Pos.X+dir.X, Character.Pos.Y+dir.Y, Character.GetWidth(), Character.GetHeight()), rec) {
@@ -223,6 +243,8 @@ func checkCollisions() {
 	if true {
 		for i, rec := range Butterflies {
 			if rl.CheckCollisionRecs(Character.Pos, rec.Pos) {
+
+				Inventory.AddItem(1, Butterflies[i].Color+1, Butterflies[i].Sprite)
 				Butterflies = append(Butterflies[:i], Butterflies[i+1:]...)
 				break
 			}

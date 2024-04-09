@@ -32,7 +32,7 @@ func NewButterfly(x, y int32, spritePath string) *Butterfly {
 		spriteCount: 0,
 		Color:       rand.Int31() % 4,
 		dir:         Dir,
-		speed:       0.25,
+		speed:       0.3,
 		Rand:        rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 }
